@@ -42,10 +42,10 @@ import (
 	"unsafe"
 
 	"github.com/google/deck"
-	"golang.org/x/crypto/cryptobyte/asn1"
-	"golang.org/x/crypto/cryptobyte"
-	"golang.org/x/sys/windows"
 	"github.com/hashicorp/go-multierror"
+	"golang.org/x/crypto/cryptobyte"
+	"golang.org/x/crypto/cryptobyte/asn1"
+	"golang.org/x/sys/windows"
 )
 
 // WinCertStorage provides windows-specific additions to the CertStorage interface.
@@ -103,6 +103,8 @@ const (
 	findIssuerStr           = compareNameStrW<<compareShift | infoIssuerFlag  // CERT_FIND_ISSUER_STR_W
 	signatureKeyUsage       = 0x80                                            // CERT_DIGITAL_SIGNATURE_KEY_USAGE
 	ncryptKeySpec           = 0xFFFFFFFF                                      // CERT_NCRYPT_KEY_SPEC
+
+	certStoreReadOnlyFlag = uint32(0x00008000) // CERT_STORE_READONLY_FLAG
 
 	// Legacy CryptoAPI flags
 	bCryptPadPKCS1 uintptr = 0x2
@@ -595,7 +597,7 @@ func newStoreHandle(provider uint32, store *uint16) (*storeHandle, error) {
 		certStoreProvSystem,
 		0,
 		0,
-		provider,
+		provider|certStoreReadOnlyFlag, // in yy use case the store will be always readonly. Thus hard code it for now.
 		uintptr(unsafe.Pointer(store)))
 	if err != nil {
 		return nil, fmt.Errorf("CertOpenStore for the user store returned: %v", err)
